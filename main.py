@@ -98,7 +98,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    await update.message.reply_text("⏳ baby thida ruko main payment check krti hu...")
+    await update.message.reply_text("⏳ baby thoda ruko main payment check krti hu 👙...")
 
     return PAYMENT_SENDING
 
