@@ -3,7 +3,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ConversationHandler, ContextTypes
 )
-import os
+import os, json, time
 
 # --- CONFIG ---
 ADMIN_ID = 8310700441
@@ -14,14 +14,24 @@ VOICE_ID = "AwACAgUAAxkBAAIBXGpR9JRt1KKh6KJ120NGB03Mf5tKAAJvIQAC4CD4VPDBIV_k516x
 
 PLAN_SELECTION, PAYMENT_SENDING = range(2)
 
-# 🔐 Paid users list
-PAID_USERS = set()
+# --- LOAD USERS ---
+try:
+    with open("paid_users.json", "r") as f:
+        PAID_USERS = set(json.load(f))
+except:
+    PAID_USERS = set()
+
+LAST_SENT = {}
+CHAT_REPLY_COOLDOWN = {}
+
+def save_users():
+    with open("paid_users.json", "w") as f:
+        json.dump(list(PAID_USERS), f)
 
 # --- START ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
 
-    # अगर already paid है
     if user_id in PAID_USERS:
         await update.message.reply_text("✅ Welcome back! Access granted.")
         return
@@ -50,11 +60,9 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data
 
-    # Demo → voice
     if data == "pay_20":
         await query.message.reply_voice(voice=VOICE_ID)
 
-    # QR sab ke liye
     await query.message.reply_photo(
         photo=QR_FILE_ID,
         caption="💳 Payment karo aur screenshot bhejo"
@@ -62,11 +70,10 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return PAYMENT_SENDING
 
-# --- PAYMENT PROOF ---
+# --- PAYMENT ---
 async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
 
-    # Forward admin ko
     await context.bot.forward_message(
         chat_id=ADMIN_ID,
         from_chat_id=user_id,
@@ -88,7 +95,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return PAYMENT_SENDING
 
-# --- ADMIN RESPONSE ---
+# --- ADMIN ---
 async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -98,36 +105,72 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data.startswith("approve"):
         PAID_USERS.add(user_id)
+        save_users()
 
         await context.bot.send_message(
             chat_id=user_id,
-            text="✅ Payment verified! nude video call Enjoy 💋"
+            text="✅ Payment verified! Enjoy 💋"
         )
         await query.edit_message_text("✅ Approved")
 
     else:
         if user_id in PAID_USERS:
             PAID_USERS.remove(user_id)
-        await update.message.reply_text("✅ Welcome back! Access granted.")
-        return
+            save_users()
 
-    keyboard = [
-        [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
-        [InlineKeyboardButton("📞 5 Min - ₹50", callback_data='pay_50')],
-        [InlineKeyboardButton("📞 10 Min - ₹100", callback_data='pay_100')],
-        [InlineKeyboardButton("📞 20 Min - ₹200", callback_data='pay_200')],
-        [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
-    ]
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="❌ video call krna hai to sahi se baby 🫦💋 kro na baby ful enjoy milega."
-        )
+        await context.bot.send_voice(chat_id=user_id, voice=VOICE_ID)
+
         await context.bot.send_photo(
             chat_id=user_id,
             photo=QR_FILE_ID,
-            caption="💳 Dobara payment karo"
+            caption="❌ Payment failed.\n\n💳 Please payment karein aur screenshot bhejein."
         )
+
+        keyboard = [
+            [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
+            [InlineKeyboardButton("📞 5 Min - ₹50", callback_data='pay_50')],
+            [InlineKeyboardButton("📞 10 Min - ₹100", callback_data='pay_100')],
+            [InlineKeyboardButton("📞 20 Min - ₹200", callback_data='pay_200')],
+            [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
+        ]
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="📞 Select your plan again:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
         await query.edit_message_text("❌ Rejected")
+
+# --- SMART REPLY ---
+async def smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
+    user_id = update.message.chat_id
+    text = update.message.text.lower()
+
+    if user_id in PAID_USERS:
+        return
+
+    keywords = ["video", "kab", "kaha", "call", "kaise"]
+
+    if any(word in text for word in keywords):
+        now = time.time()
+
+        if user_id in CHAT_REPLY_COOLDOWN and now - CHAT_REPLY_COOLDOWN[user_id] < 15:
+            return
+
+        CHAT_REPLY_COOLDOWN[user_id] = now
+
+        await update.message.reply_text(
+            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad main details dungi ❤️"
+        )
+
+        await update.message.reply_photo(
+            photo=QR_FILE_ID,
+            caption="💳 Jaldi payment karo 😘"
+        )
 
 # --- FORCE PAYMENT ---
 async def force_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -136,8 +179,14 @@ async def force_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.message.chat_id
 
-    # अगर paid नहीं है
     if user_id not in PAID_USERS:
+        now = time.time()
+
+        if user_id in LAST_SENT and now - LAST_SENT[user_id] < 10:
+            return
+
+        LAST_SENT[user_id] = now
+
         await update.message.reply_text(
             "⚠️ Access ke liye pehle payment karein."
         )
@@ -167,7 +216,10 @@ def main():
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
 
-    # ⚠️ LAST handler (important)
+    # SMART reply first
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, smart_reply))
+
+    # FORCE payment last
     app.add_handler(MessageHandler(filters.ALL, force_payment))
 
     print("Bot running...")
