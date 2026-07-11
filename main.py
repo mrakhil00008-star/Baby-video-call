@@ -69,7 +69,7 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "pay_20":
         await query.message.reply_voice(voice=DEMO_VOICE)
     else:
-        await query.message.reply_voice(voice=DEMO_VOICE)
+        await query.message.reply_voice(voice=VOICE_VOICE)
 
     await query.message.reply_photo(
         photo=QR_FILE_ID,
