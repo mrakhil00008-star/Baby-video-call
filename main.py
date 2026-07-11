@@ -10,7 +10,10 @@ ADMIN_ID = 8310700441
 TOKEN = os.getenv("BOT_TOKEN")
 
 QR_FILE_ID = "AgACAgUAAxkBAAIBXmpR9KfCaoBPQGCf6__yKGftuAQPAAIcF2sb4VyRVjreUTcE5T58AQADAgADeQADPAQ"
-VOICE_ID = "AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
+
+# 🔥 VOICE IDs
+START_VOICE = "AwACAgUAAxkBAAIBXGpR9JRt1KKh6KJ120NGB03Mf5tKAAJvIQAC4CD4VPDBIV_k516xPAQ"
+DEMO_VOICE = "AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
 
 PLAN_SELECTION, PAYMENT_SENDING = range(2)
 
@@ -44,7 +47,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
     ]
 
-    await update.message.reply_voice(voice=VOICE_ID)
+    # 🔥 START voice
+    await update.message.reply_voice(voice=START_VOICE)
 
     await update.message.reply_text(
         "📞 Select your Video Call Plan:\n\nFull open enjoy 💋🫦",
@@ -58,10 +62,14 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Voice always
-    await query.message.reply_voice(voice=VOICE_ID)
+    data = query.data
 
-    # QR always
+    # 🔥 Demo pe alag voice
+    if data == "pay_20":
+        await query.message.reply_voice(voice=DEMO_VOICE)
+    else:
+        await query.message.reply_voice(voice=START_VOICE)
+
     await query.message.reply_photo(
         photo=QR_FILE_ID,
         caption="💳 Payment karo aur screenshot bhejo"
@@ -119,7 +127,7 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_voice(
             chat_id=user_id,
-            voice=VOICE_ID
+            voice=DEMO_VOICE
         )
 
         await context.bot.send_photo(
@@ -189,10 +197,7 @@ async def force_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         LAST_SENT[user_id] = now
 
-        await update.message.reply_text(
-            "⚠️ Access ke liye pehle payment karein."
-        )
-
+        await update.message.reply_text("⚠️ Access ke liye pehle payment karein.")
         await update.message.reply_photo(
             photo=QR_FILE_ID,
             caption="💳 Payment karke screenshot bhejein."
@@ -217,7 +222,6 @@ def main():
 
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
-
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, smart_reply))
     app.add_handler(MessageHandler(filters.ALL, force_payment))
 
