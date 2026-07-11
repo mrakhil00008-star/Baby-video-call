@@ -30,22 +30,21 @@ def save_users():
     with open("paid_users.json", "w") as f:
         json.dump(list(PAID_USERS), f)
 
-# --- AUTO FLOW STORAGE ---
-LAST_ACTIVITY = {}
+# --- AUTO DATA ---
+LAST_MSG_TIME = {}
 
 FOLLOW_MESSAGES = [
-    "💋 Baby kaha ho? 😘 Interested ho na?",
-    "🔥 Jaldi karo baby limited time hai 😍",
-    "😏 Demo dekhoge to maza aa jayega baby",
-    "💖 Payment karo aur full enjoy karo 😘",
-    "👀 Wait mat karo baby, abhi join karo",
-    "💞 Main wait kar rahi hu baby 😘"
+    "💋 Baby kaha ho? reply karo 😘",
+    "🔥 Jaldi karo baby waiting hu 😍",
+    "😏 Demo try karo baby maza aa jayega",
+    "💖 Payment karo aur enjoy karo 😘",
+    "👀 Miss kar rahe ho kya baby?",
 ]
 
 # --- START ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
-    LAST_ACTIVITY[user_id] = time.time()
+    LAST_MSG_TIME[user_id] = time.time()
 
     if user_id in PAID_USERS:
         await update.message.reply_text("✅ Welcome back! Access granted.")
@@ -69,7 +68,7 @@ async def open_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     user_id = query.message.chat_id
-    LAST_ACTIVITY[user_id] = time.time()
+    LAST_MSG_TIME[user_id] = time.time()
 
     keyboard = [
         [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
@@ -92,11 +91,9 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     user_id = query.message.chat_id
-    LAST_ACTIVITY[user_id] = time.time()
+    LAST_MSG_TIME[user_id] = time.time()
 
-    data = query.data
-
-    if data == "pay_20":
+    if query.data == "pay_20":
         await query.message.reply_voice(voice=DEMO_VOICE)
     else:
         await query.message.reply_voice(voice=START_VOICE)
@@ -111,7 +108,7 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # --- PAYMENT ---
 async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
-    LAST_ACTIVITY[user_id] = time.time()
+    LAST_MSG_TIME[user_id] = time.time()
 
     await context.bot.forward_message(
         chat_id=ADMIN_ID,
@@ -130,7 +127,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    await update.message.reply_text("⏳ wait baby main payment check karti hu..")
+    await update.message.reply_text("⏳ Payment under review...")
 
     return PAYMENT_SENDING
 
@@ -139,21 +136,15 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    data = query.data
-    user_id = int(data.split("_")[1])
+    user_id = int(query.data.split("_")[1])
 
-    if data.startswith("approve"):
+    if query.data.startswith("approve"):
         PAID_USERS.add(user_id)
         save_users()
 
         await context.bot.send_message(
             chat_id=user_id,
-            text=(
-                "✅ Payment verified!\n\n"
-                "💋 Madam ko message karo aur video call karo 😘\n\n"
-                f"👉 Telegram ID: {OWNER_USERNAME}\n\n"
-                "🔥 Enjoy karo baby 💕"
-            )
+            text=f"✅ Payment verified!\n\n👉 Message karo: {OWNER_USERNAME}\n💋 Enjoy baby 😘"
         )
 
         await query.edit_message_text("✅ Approved")
@@ -168,29 +159,29 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_photo(
             chat_id=user_id,
             photo=QR_FILE_ID,
-            caption="❌ Payment failed.\n\n💳 Dubara payment karo"
+            caption="❌ Payment failed.\n\n💳 Dubara try karo"
         )
 
         await query.edit_message_text("❌ Rejected")
 
-# --- AUTO FOLLOW SYSTEM ---
-async def auto_follow(context: ContextTypes.DEFAULT_TYPE):
+# --- AUTO FOLLOW (NO CRASH) ---
+async def auto_follow(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
+    user_id = update.message.chat_id
+
+    if user_id in PAID_USERS:
+        return
+
     now = time.time()
 
-    for user_id in LAST_ACTIVITY:
-        if user_id in PAID_USERS:
-            continue
+    if user_id in LAST_MSG_TIME and now - LAST_MSG_TIME[user_id] > 40:
+        msg = random.choice(FOLLOW_MESSAGES)
 
-        # 60 sec idle
-        if now - LAST_ACTIVITY[user_id] > 60:
-            msg = random.choice(FOLLOW_MESSAGES)
+        await update.message.reply_text(msg)
 
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=msg
-            )
-
-            LAST_ACTIVITY[user_id] = now  # reset timer
+        LAST_MSG_TIME[user_id] = now
 
 # --- MAIN ---
 def main():
@@ -213,8 +204,8 @@ def main():
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
 
-    # 🔥 AUTO FLOW JOB
-    app.job_queue.run_repeating(auto_follow, interval=30, first=30)
+    # 🔥 AUTO FOLLOW WITHOUT JOBQUEUE
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auto_follow))
 
     print("Bot running...")
     app.run_polling()
