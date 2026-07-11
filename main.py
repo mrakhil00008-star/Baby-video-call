@@ -118,12 +118,12 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             PAID_USERS.remove(user_id)
             save_users()
 
-        await context.bot.send_voice(chat_id=user_id, voice=VOICE_ID)
+        await context.bot.send_voice 'AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ'
 
         await context.bot.send_photo(
             chat_id=user_id,
             photo=QR_FILE_ID,
-            caption="❌ Payment failed.\n\n💳 Please payment karein aur screenshot bhejein."
+            caption="❌ Payment failed.\n\n💳 Please payment karo aur screenshot bhejo baby."
         )
 
         keyboard = [
@@ -164,12 +164,12 @@ async def smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         CHAT_REPLY_COOLDOWN[user_id] = now
 
         await update.message.reply_text(
-            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad main details dungi ❤️"
+            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad main mere WhatsApp number dungi baby❤️"
         )
 
         await update.message.reply_photo(
             photo=QR_FILE_ID,
-            caption="💳 Jaldi payment karo 😘"
+            caption="💳 Jaldi payment karo 😘 Bina payment ke raply nhi milega"
         )
 
 # --- FORCE PAYMENT ---
