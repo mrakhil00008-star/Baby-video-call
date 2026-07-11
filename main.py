@@ -3,7 +3,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ConversationHandler, ContextTypes
 )
-import os, json, time
+import os, json, time, random
 
 # --- CONFIG ---
 ADMIN_ID = 8310700441
@@ -30,12 +30,25 @@ def save_users():
     with open("paid_users.json", "w") as f:
         json.dump(list(PAID_USERS), f)
 
+# --- AUTO FLOW STORAGE ---
+LAST_ACTIVITY = {}
+
+FOLLOW_MESSAGES = [
+    "💋 Baby kaha ho? 😘 Interested ho na?",
+    "🔥 Jaldi karo baby limited time hai 😍",
+    "😏 Demo dekhoge to maza aa jayega baby",
+    "💖 Payment karo aur full enjoy karo 😘",
+    "👀 Wait mat karo baby, abhi join karo",
+    "💞 Main wait kar rahi hu baby 😘"
+]
+
 # --- START ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
+    LAST_ACTIVITY[user_id] = time.time()
 
     if user_id in PAID_USERS:
-        await update.message.reply_text("✅ Welcome back! nude video call.")
+        await update.message.reply_text("✅ Welcome back! Access granted.")
         return
 
     keyboard = [
@@ -55,6 +68,9 @@ async def open_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    user_id = query.message.chat_id
+    LAST_ACTIVITY[user_id] = time.time()
+
     keyboard = [
         [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
         [InlineKeyboardButton("📞 5 Min - ₹50", callback_data='pay_50')],
@@ -64,7 +80,7 @@ async def open_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
 
     await query.message.reply_text(
-        "📞 Select your Video Call Plan:\n\nFull open enjoy 💋🫦",
+        "📞 Select your Video Call Plan:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -74,6 +90,9 @@ async def open_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    user_id = query.message.chat_id
+    LAST_ACTIVITY[user_id] = time.time()
 
     data = query.data
 
@@ -92,6 +111,7 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # --- PAYMENT ---
 async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
+    LAST_ACTIVITY[user_id] = time.time()
 
     await context.bot.forward_message(
         chat_id=ADMIN_ID,
@@ -110,7 +130,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    await update.message.reply_text("⏳ Payment under review...")
+    await update.message.reply_text("⏳ wait baby main payment check karti hu..")
 
     return PAYMENT_SENDING
 
@@ -131,7 +151,7 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=(
                 "✅ Payment verified!\n\n"
                 "💋 Madam ko message karo aur video call karo 😘\n\n"
-                "👉 Telegram ID: @MSSOFIYA64562\n\n"
+                f"👉 Telegram ID: {OWNER_USERNAME}\n\n"
                 "🔥 Enjoy karo baby 💕"
             )
         )
@@ -143,18 +163,34 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             PAID_USERS.remove(user_id)
             save_users()
 
-        await context.bot.send_voice(
-            chat_id=user_id,
-            voice=DEMO_VOICE
-        )
+        await context.bot.send_voice(chat_id=user_id, voice=DEMO_VOICE)
 
         await context.bot.send_photo(
             chat_id=user_id,
             photo=QR_FILE_ID,
-            caption="❌ Payment failed.\n\n💳 Please payment karo aur screenshot bhejo."
+            caption="❌ Payment failed.\n\n💳 Dubara payment karo"
         )
 
         await query.edit_message_text("❌ Rejected")
+
+# --- AUTO FOLLOW SYSTEM ---
+async def auto_follow(context: ContextTypes.DEFAULT_TYPE):
+    now = time.time()
+
+    for user_id in LAST_ACTIVITY:
+        if user_id in PAID_USERS:
+            continue
+
+        # 60 sec idle
+        if now - LAST_ACTIVITY[user_id] > 60:
+            msg = random.choice(FOLLOW_MESSAGES)
+
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=msg
+            )
+
+            LAST_ACTIVITY[user_id] = now  # reset timer
 
 # --- MAIN ---
 def main():
@@ -176,6 +212,9 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
+
+    # 🔥 AUTO FLOW JOB
+    app.job_queue.run_repeating(auto_follow, interval=30, first=30)
 
     print("Bot running...")
     app.run_polling()
