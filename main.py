@@ -36,8 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
 
     if user_id in PAID_USERS:
-        await update.message.reply_text("✅ Welcome back! full nude video call baby
-        full opne + fingaring lasbian show full enjoy.")
+        await update.message.reply_text("✅ Welcome back! full nude video call.")
         return
 
     keyboard = [
