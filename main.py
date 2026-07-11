@@ -5,90 +5,164 @@ from telegram.ext import (
 )
 import os
 
+# --- CONFIG ---
 ADMIN_ID = 8310700441
 TOKEN = os.getenv("BOT_TOKEN")
 
-MAIN_MENU, PLAN_SELECTION, PAYMENT_SENDING = range(3)
+QR_FILE_ID = "AgACAgUAAxkBAAIBXmpR9KfCaoBPQGCf6__yKGftuAQPAAIcF2sb4VyRVjreUTcE5T58AQADAgADeQADPAQ"
+VOICE_ID = "AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
 
+PLAN_SELECTION, PAYMENT_SENDING = range(2)
+
+# 🔐 Paid users list
+PAID_USERS = set()
+
+# --- START ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("📞 Video Call", callback_data='video_call')]]
-    await update.message.reply_text(
-        "Welcome! Click below to see plans:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-    return MAIN_MENU
+    user_id = update.message.chat_id
 
-async def video_call_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+    # अगर already paid है
+    if user_id in PAID_USERS:
+        await update.message.reply_text("✅ Welcome back! Access granted.")
+        return
 
     keyboard = [
-        [InlineKeyboardButton("₹20 Demo", callback_data='pay_20')],
-        [InlineKeyboardButton("₹50 - 5 Min", callback_data='pay_50')],
-        [InlineKeyboardButton("⬅ Back", callback_data='back')]
+        [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
+        [InlineKeyboardButton("📞 5 Min - ₹50", callback_data='pay_50')],
+        [InlineKeyboardButton("📞 10 Min - ₹100", callback_data='pay_100')],
+        [InlineKeyboardButton("📞 20 Min - ₹200", callback_data='pay_200')],
+        [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
     ]
 
-    await query.edit_message_text(
-        "Select Plan:",
+    await update.message.reply_voice(voice=VOICE_ID)
+
+    await update.message.reply_text(
+        "📞 Select your Video Call Plan:\n\nFull open enjoy 💋🫦",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
     return PLAN_SELECTION
 
-async def back_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    keyboard = [[InlineKeyboardButton("📞 Video Call", callback_data='video_call')]]
-
-    await query.edit_message_text(
-        "Welcome back!",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-    return MAIN_MENU
-
+# --- PLAN CLICK ---
 async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    await query.message.reply_text("Payment karo aur screenshot bhejo.")
+    data = query.data
+
+    # Demo → voice
+    if data == "pay_20":
+        await query.message.reply_voice(voice=VOICE_ID)
+
+    # QR sab ke liye
+    await query.message.reply_photo(
+        photo=QR_FILE_ID,
+        caption="💳 Payment karo aur screenshot bhejo"
+    )
+
     return PAYMENT_SENDING
 
+# --- PAYMENT PROOF ---
 async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.chat_id
+
+    # Forward admin ko
     await context.bot.forward_message(
         chat_id=ADMIN_ID,
-        from_chat_id=update.message.chat_id,
+        from_chat_id=user_id,
         message_id=update.message.message_id
     )
 
+    keyboard = [[
+        InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user_id}"),
+        InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user_id}")
+    ]]
+
     await context.bot.send_message(
         chat_id=ADMIN_ID,
-        text=f"Payment received from {update.message.from_user.first_name}"
+        text=f"💰 Payment from {update.message.from_user.first_name}",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
+    await update.message.reply_text("⏳ Payment under review...")
 
     return PAYMENT_SENDING
 
+# --- ADMIN RESPONSE ---
 async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    return ConversationHandler.END
 
-if __name__ == "__main__":
+    data = query.data
+    user_id = int(data.split("_")[1])
+
+    if data.startswith("approve"):
+        PAID_USERS.add(user_id)
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="✅ Payment verified! Enjoy 💋"
+        )
+        await query.edit_message_text("✅ Approved")
+
+    else:
+        if user_id in PAID_USERS:
+            PAID_USERS.remove(user_id)
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="❌ Payment failed. Try again."
+        )
+        await context.bot.send_photo(
+            chat_id=user_id,
+            photo=QR_FILE_ID,
+            caption="💳 Dobara payment karo"
+        )
+        await query.edit_message_text("❌ Rejected")
+
+# --- FORCE PAYMENT ---
+async def force_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
+    user_id = update.message.chat_id
+
+    # अगर paid नहीं है
+    if user_id not in PAID_USERS:
+        await update.message.reply_text(
+            "⚠️ Access ke liye pehle payment karein."
+        )
+
+        await update.message.reply_photo(
+            photo=QR_FILE_ID,
+            caption="💳 Payment karke screenshot bhejein."
+        )
+
+# --- MAIN ---
+def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     conv = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            MAIN_MENU: [CallbackQueryHandler(video_call_menu, pattern='video_call')],
             PLAN_SELECTION: [
-                CallbackQueryHandler(show_qr, pattern='pay_'),
-                CallbackQueryHandler(back_to_main, pattern='back')
+                CallbackQueryHandler(show_qr, pattern='^pay_')
             ],
-            PAYMENT_SENDING: [MessageHandler(filters.ALL, handle_payment)],
+            PAYMENT_SENDING: [
+                MessageHandler(filters.PHOTO | filters.TEXT, handle_payment)
+            ],
         },
         fallbacks=[CommandHandler("start", start)]
     )
 
     app.add_handler(conv)
+    app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
+
+    # ⚠️ LAST handler (important)
+    app.add_handler(MessageHandler(filters.ALL, force_payment))
 
     print("Bot running...")
     app.run_polling()
+
+if __name__ == "__main__":
+    main()
