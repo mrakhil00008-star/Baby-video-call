@@ -11,21 +11,20 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 QR_FILE_ID = "AgACAgUAAxkBAAIBXmpR9KfCaoBPQGCf6__yKGftuAQPAAIcF2sb4VyRVjreUTcE5T58AQADAgADeQADPAQ"
 
-# 🔥 VOICE IDs
 START_VOICE = "AwACAgUAAxkBAAIBXGpR9JRt1KKh6KJ120NGB03Mf5tKAAJvIQAC4CD4VPDBIV_k516xPAQ"
 DEMO_VOICE = "AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
 
+PROOF_LINK = "https://t.me/+VI2W3dDjCERmNTM1"
+OWNER_USERNAME = "@MSSOFIYA64562"
+
 PLAN_SELECTION, PAYMENT_SENDING = range(2)
 
-# --- LOAD USERS ---
+# --- USERS ---
 try:
     with open("paid_users.json", "r") as f:
         PAID_USERS = set(json.load(f))
 except:
     PAID_USERS = set()
-
-LAST_SENT = {}
-CHAT_REPLY_COOLDOWN = {}
 
 def save_users():
     with open("paid_users.json", "w") as f:
@@ -36,8 +35,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
 
     if user_id in PAID_USERS:
-        await update.message.reply_text("✅ Welcome back! full nude video call.")
+        await update.message.reply_text("✅ Welcome back! nude video call.")
         return
+
+    keyboard = [
+        [InlineKeyboardButton("📞 Video Call", callback_data='open_menu')],
+        [InlineKeyboardButton("📂 Video Call Proof", url=PROOF_LINK)]
+    ]
+
+    await update.message.reply_voice(voice=START_VOICE)
+
+    await update.message.reply_text(
+        "💋 Baby video call ke liye niche click karo",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# --- OPEN MENU ---
+async def open_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
     keyboard = [
         [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
@@ -47,10 +63,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
     ]
 
-    # 🔥 START voice
-    await update.message.reply_voice(voice=START_VOICE)
-
-    await update.message.reply_text(
+    await query.message.reply_text(
         "📞 Select your Video Call Plan:\n\nFull open enjoy 💋🫦",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -64,11 +77,10 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data
 
-    # 🔥 Demo pe alag voice
     if data == "pay_20":
         await query.message.reply_voice(voice=DEMO_VOICE)
     else:
-        await query.message.reply_voice(voice=VOICE_VOICE)
+        await query.message.reply_voice(voice=START_VOICE)
 
     await query.message.reply_photo(
         photo=QR_FILE_ID,
@@ -98,7 +110,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    await update.message.reply_text("⏳ baby thoda ruko main payment check krti hu 👙...")
+    await update.message.reply_text("⏳ Payment under review...")
 
     return PAYMENT_SENDING
 
@@ -116,8 +128,14 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(
             chat_id=user_id,
-            text="✅ Payment verified! Enjoy 💋"
+            text=(
+                "✅ Payment verified!\n\n"
+                "💋 Madam ko message karo aur video call karo 😘\n\n"
+                "👉 Telegram ID: @MSSOFIYA64562\n\n"
+                "🔥 Enjoy karo baby 💕"
+            )
         )
+
         await query.edit_message_text("✅ Approved")
 
     else:
@@ -136,94 +154,28 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             caption="❌ Payment failed.\n\n💳 Please payment karo aur screenshot bhejo."
         )
 
-        keyboard = [
-            [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
-            [InlineKeyboardButton("📞 5 Min - ₹50", callback_data='pay_50')],
-            [InlineKeyboardButton("📞 10 Min - ₹100", callback_data='pay_100')],
-            [InlineKeyboardButton("📞 20 Min - ₹200", callback_data='pay_200')],
-            [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
-        ]
-
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="📞 Select your plan again:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
         await query.edit_message_text("❌ Rejected")
-
-# --- SMART REPLY ---
-async def smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
-        return
-
-    user_id = update.message.chat_id
-    text = update.message.text.lower()
-
-    if user_id in PAID_USERS:
-        return
-
-    keywords = ["video", "kab", "kaha", "call", "kaise"]
-
-    if any(word in text for word in keywords):
-        now = time.time()
-
-        if user_id in CHAT_REPLY_COOLDOWN and now - CHAT_REPLY_COOLDOWN[user_id] < 15:
-            return
-
-        CHAT_REPLY_COOLDOWN[user_id] = now
-
-        await update.message.reply_text(
-            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad WhatsApp number dungi ❤️"
-        )
-
-        await update.message.reply_photo(
-            photo=QR_FILE_ID,
-            caption="💳 Jaldi payment karo baby 😘"
-        )
-
-# --- FORCE PAYMENT ---
-async def force_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
-        return
-
-    user_id = update.message.chat_id
-
-    if user_id not in PAID_USERS:
-        now = time.time()
-
-        if user_id in LAST_SENT and now - LAST_SENT[user_id] < 10:
-            return
-
-        LAST_SENT[user_id] = now
-
-        await update.message.reply_text("⚠️ video call / demo ke liye pehle payment karein.")
-        await update.message.reply_photo(
-            photo=QR_FILE_ID,
-            caption="💳 Payment karke screenshot bhejein."
-        )
 
 # --- MAIN ---
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     conv = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[CallbackQueryHandler(open_menu, pattern='open_menu')],
         states={
             PLAN_SELECTION: [
                 CallbackQueryHandler(show_qr, pattern='^pay_')
             ],
             PAYMENT_SENDING: [
-                MessageHandler(filters.PHOTO | filters.TEXT, handle_payment)
+                MessageHandler(filters.ALL, handle_payment)
             ],
         },
         fallbacks=[CommandHandler("start", start)]
     )
 
+    app.add_handler(CommandHandler("start", start))
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, smart_reply))
-    app.add_handler(MessageHandler(filters.ALL, force_payment))
 
     print("Bot running...")
     app.run_polling()
