@@ -10,7 +10,7 @@ ADMIN_ID = 8310700441
 TOKEN = os.getenv("BOT_TOKEN")
 
 QR_FILE_ID = "AgACAgUAAxkBAAIBXmpR9KfCaoBPQGCf6__yKGftuAQPAAIcF2sb4VyRVjreUTcE5T58AQADAgADeQADPAQ"
-VOICE_ID = "AwACAgUAAxkBAAIBXGpR9JRt1KKh6KJ120NGB03Mf5tKAAJvIQAC4CD4VPDBIV_k516xPAQ"
+VOICE_ID = "AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
 
 PLAN_SELECTION, PAYMENT_SENDING = range(2)
 
@@ -58,12 +58,10 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    data = query.data
+    # Voice always
+    await query.message.reply_voice(voice=VOICE_ID)
 
-    if data == "pay_20":
-    await query.message.reply_voice(
-        voice="AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
-    )
+    # QR always
     await query.message.reply_photo(
         photo=QR_FILE_ID,
         caption="💳 Payment karo aur screenshot bhejo"
@@ -120,14 +118,14 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             save_users()
 
         await context.bot.send_voice(
-    chat_id=user_id,
-    voice="AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
+            chat_id=user_id,
+            voice=VOICE_ID
         )
 
         await context.bot.send_photo(
             chat_id=user_id,
             photo=QR_FILE_ID,
-            caption="❌ Payment failed.\n\n💳 Please payment karo aur screenshot bhejo baby."
+            caption="❌ Payment failed.\n\n💳 Please payment karo aur screenshot bhejo."
         )
 
         keyboard = [
@@ -168,12 +166,12 @@ async def smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         CHAT_REPLY_COOLDOWN[user_id] = now
 
         await update.message.reply_text(
-            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad main mere WhatsApp number dungi baby❤️"
+            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad WhatsApp milega ❤️"
         )
 
         await update.message.reply_photo(
             photo=QR_FILE_ID,
-            caption="💳 Jaldi payment karo 😘 Bina payment ke raply nhi milega"
+            caption="💳 Jaldi payment karo 😘"
         )
 
 # --- FORCE PAYMENT ---
@@ -220,10 +218,7 @@ def main():
     app.add_handler(conv)
     app.add_handler(CallbackQueryHandler(admin_response, pattern='^(approve|reject)_'))
 
-    # SMART reply first
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, smart_reply))
-
-    # FORCE payment last
     app.add_handler(MessageHandler(filters.ALL, force_payment))
 
     print("Bot running...")
