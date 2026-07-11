@@ -36,7 +36,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat_id
 
     if user_id in PAID_USERS:
-        await update.message.reply_text("✅ Welcome back! Access granted.")
+        await update.message.reply_text("✅  💋 full nude video call baby
+        full opne + fingaring lasbian show full enjoy.")
         return
 
     keyboard = [
@@ -68,7 +69,7 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "pay_20":
         await query.message.reply_voice(voice=DEMO_VOICE)
     else:
-        await query.message.reply_voice(voice=START_VOICE)
+        await query.message.reply_voice(voice=DEMO_VOICE)
 
     await query.message.reply_photo(
         photo=QR_FILE_ID,
@@ -98,7 +99,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    await update.message.reply_text("⏳ Payment under review...")
+    await update.message.reply_text("⏳ baby thida ruko main payment check krti hu...")
 
     return PAYMENT_SENDING
 
@@ -174,12 +175,12 @@ async def smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         CHAT_REPLY_COOLDOWN[user_id] = now
 
         await update.message.reply_text(
-            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad WhatsApp milega ❤️"
+            "😘 Baby sab milega... pehle payment karo 💋\n\nPayment ke baad WhatsApp number dungi ❤️"
         )
 
         await update.message.reply_photo(
             photo=QR_FILE_ID,
-            caption="💳 Jaldi payment karo 😘"
+            caption="💳 Jaldi payment karo baby 😘"
         )
 
 # --- FORCE PAYMENT ---
@@ -197,7 +198,7 @@ async def force_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         LAST_SENT[user_id] = now
 
-        await update.message.reply_text("⚠️ Access ke liye pehle payment karein.")
+        await update.message.reply_text("⚠️ video call / demo ke liye pehle payment karein.")
         await update.message.reply_photo(
             photo=QR_FILE_ID,
             caption="💳 Payment karke screenshot bhejein."
