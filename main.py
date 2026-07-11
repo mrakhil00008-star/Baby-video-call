@@ -108,7 +108,16 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         if user_id in PAID_USERS:
             PAID_USERS.remove(user_id)
+        await update.message.reply_text("✅ Welcome back! Access granted.")
+        return
 
+    keyboard = [
+        [InlineKeyboardButton("📞 Demo - ₹20", callback_data='pay_20')],
+        [InlineKeyboardButton("📞 5 Min - ₹50", callback_data='pay_50')],
+        [InlineKeyboardButton("📞 10 Min - ₹100", callback_data='pay_100')],
+        [InlineKeyboardButton("📞 20 Min - ₹200", callback_data='pay_200')],
+        [InlineKeyboardButton("📞 30 Min - ₹300", callback_data='pay_300')],
+    ]
         await context.bot.send_message(
             chat_id=user_id,
             text="❌ video call krna hai to sahi se baby 🫦💋 kro na baby ful enjoy milega."
