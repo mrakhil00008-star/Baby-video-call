@@ -10,7 +10,7 @@ ADMIN_ID = 8310700441
 TOKEN = os.getenv("BOT_TOKEN")
 
 QR_FILE_ID = "AgACAgUAAxkBAAIBXmpR9KfCaoBPQGCf6__yKGftuAQPAAIcF2sb4VyRVjreUTcE5T58AQADAgADeQADPAQ"
-VOICE_ID = "AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
+VOICE_ID = "AwACAgUAAxkBAAIBXGpR9JRt1KKh6KJ120NGB03Mf5tKAAJvIQAC4CD4VPDBIV_k516xPAQ"
 
 PLAN_SELECTION, PAYMENT_SENDING = range(2)
 
@@ -101,7 +101,7 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(
             chat_id=user_id,
-            text="✅ Payment verified! Enjoy 💋"
+            text="✅ Payment verified! nude video call Enjoy 💋"
         )
         await query.edit_message_text("✅ Approved")
 
@@ -111,7 +111,7 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(
             chat_id=user_id,
-            text="❌ Payment failed. Try again."
+            text="❌ video call krna hai to sahi se baby 🫦💋 kro na baby ful enjoy milega."
         )
         await context.bot.send_photo(
             chat_id=user_id,
