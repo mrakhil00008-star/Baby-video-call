@@ -100,7 +100,7 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.reply_photo(
         photo=QR_FILE_ID,
-        caption="💳 Payment karo aur screenshot bhejo"
+        caption="💳 baby Payment karo aur screenshot bhejo"
     )
 
     return PAYMENT_SENDING
@@ -127,7 +127,7 @@ async def handle_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-    await update.message.reply_text("⏳ Payment under review...")
+    await update.message.reply_text("⏳ ruko babay main payment check karti hu..")
 
     return PAYMENT_SENDING
 
