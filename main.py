@@ -47,7 +47,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     LAST_MSG_TIME[user_id] = time.time()
 
     if user_id in PAID_USERS:
-        await update.message.reply_text("✅ Welcome back! Access granted.")
+        await update.message.reply_text("✅ Welcome back! nude video call baby")
         return
 
     keyboard = [
@@ -79,7 +79,7 @@ async def open_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
 
     await query.message.reply_text(
-        "📞 Select your Video Call Plan:",
+        "baby apko ko kitne minutes chahiye? jitna payment hai us par niche chalik kro:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
