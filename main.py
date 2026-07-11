@@ -61,8 +61,9 @@ async def show_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
 
     if data == "pay_20":
-        await query.message.reply_voice(voice=VOICE_ID)
-
+    await query.message.reply_voice(
+        voice="AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
+    )
     await query.message.reply_photo(
         photo=QR_FILE_ID,
         caption="💳 Payment karo aur screenshot bhejo"
@@ -118,7 +119,10 @@ async def admin_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             PAID_USERS.remove(user_id)
             save_users()
 
-        await context.bot.send_voice 'AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ'
+        await context.bot.send_voice(
+    chat_id=user_id,
+    voice="AwACAgUAAxkBAAIBYGpR9PWgrbo_7hDMtosZqAolfeJKAAJzIQAC4CD4VJ0O2PDKNJc6PAQ"
+        )
 
         await context.bot.send_photo(
             chat_id=user_id,
